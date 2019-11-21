@@ -58,24 +58,30 @@ public class CertificateMessagePreparator extends HandshakeMessagePreparator<Cer
                 selectedCertificateKeyPair = chooser.getConfig().getDefaultExplicitCertificateKeyPair();
             }
             msg.setCertificateKeyPair(selectedCertificateKeyPair);
-            byte[] certBytes = selectedCertificateKeyPair.getCertificateBytes();
-            if (certBytes.length >= 3 && selectedCertificateKeyPair.isCertificateParseable()) {
-                pairList = new LinkedList<>();
-                try {
-                    Certificate cert = Certificate.parse(new ByteArrayInputStream(certBytes));
-                    for (org.bouncycastle.asn1.x509.Certificate subCert : cert.getCertificateList()) {
-                        pairList.add(new CertificatePair(subCert.getEncoded()));
+            if( selectedCertificateKeyPair == null ) {
+                msg.setCertificatesListBytes(new byte[0]);
+                msg.setCertificatesListLength(0);
+            }
+            else {
+                byte[] certBytes = selectedCertificateKeyPair.getCertificateBytes();
+                if (certBytes.length >= 3 && selectedCertificateKeyPair.isCertificateParseable()) {
+                    pairList = new LinkedList<>();
+                    try {
+                        Certificate cert = Certificate.parse(new ByteArrayInputStream(certBytes));
+                        for (org.bouncycastle.asn1.x509.Certificate subCert : cert.getCertificateList()) {
+                            pairList.add(new CertificatePair(subCert.getEncoded()));
+                        }
+                        msg.setCertificatesList(pairList);
+                        prepareFromPairList(msg);
+                    } catch (IOException ex) {
+                        throw new PreparationException("Could not parse a parseable certificate, this should never happen",
+                                ex);
                     }
-                    msg.setCertificatesList(pairList);
-                    prepareFromPairList(msg);
-                } catch (IOException ex) {
-                    throw new PreparationException("Could not parse a parseable certificate, this should never happen",
-                            ex);
-                }
 
-            } else {
-                msg.setCertificatesListBytes(certBytes);
-                msg.setCertificatesListLength(msg.getCertificatesListBytes().getValue().length);
+                } else {
+                    msg.setCertificatesListBytes(certBytes);
+                    msg.setCertificatesListLength(msg.getCertificatesListBytes().getValue().length);
+                }
             }
         } else {
             prepareFromPairList(msg);

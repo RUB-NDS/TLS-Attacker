@@ -137,6 +137,10 @@ public abstract class HandshakeMessage extends ProtocolMessage {
     }
 
     public boolean containsExtension(ExtensionType extensionType) {
+        if (extensions == null) {
+            return false;
+        }
+
         for (ExtensionMessage e : extensions) {
             if (e.getExtensionTypeConstant() == extensionType) {
                 return true;
